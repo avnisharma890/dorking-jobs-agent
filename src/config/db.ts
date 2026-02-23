@@ -1,6 +1,6 @@
 import { Pool } from "pg";
-import { env } from "./env.ts";
-import { logger } from "./logger.ts";
+import { env } from "./env.js";
+import { logger } from "./logger.js";
 
 // Create Postgres pool
 export const pool = new Pool({

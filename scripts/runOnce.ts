@@ -1,5 +1,5 @@
-import { searchJobs } from "../src/services/search.service.ts";
-import { logger } from "../src/config/logger.ts";
+import { searchJobs } from "../src/services/search.service.js";
+import { logger } from "../src/config/logger.js";
 
 async function main() {
   logger.info("Running discovery once...");

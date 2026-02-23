@@ -1,7 +1,7 @@
 import axios from "axios";
-import { env } from "../config/env.ts";
-import { logger } from "../config/logger.ts";
-import { SEARCH_QUERIES } from "../constants/searchQueries.ts";
+import { env } from "../config/env.js";
+import { logger } from "../config/logger.js";
+import { SEARCH_QUERIES } from "../constants/searchQueries.js";
 
 export interface DiscoveredJob {
   title: string;

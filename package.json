@@ -1,14 +1,15 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "AI Internship Discovery Agent Backend",
   "type": "module",
+  "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "discover": "ts-node scripts/runOnce.ts"
+    "discover": "tsx scripts/runOnce.ts",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -30,7 +31,6 @@
     "eslint": "^10.0.1",
     "nodemon": "^3.1.14",
     "pino-pretty": "^13.1.3",
-    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

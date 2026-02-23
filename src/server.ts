@@ -1,7 +1,7 @@
-import { createApp } from "./app.ts";
-import { env } from "./config/env.ts";
-import { logger } from "./config/logger.ts";
-import { checkDbHealth } from "./config/db.ts";
+import { createApp } from "./app.js";
+import { env } from "./config/env.js";
+import { logger } from "./config/logger.js";
+import { checkDbHealth } from "./config/db.js";
 
 async function startServer() {
   const app = createApp();
