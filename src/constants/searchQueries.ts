@@ -4,6 +4,7 @@ export interface SearchQueryConfig {
   priority: number;
 }
 
+// discovery intelligence layer
 export const SEARCH_QUERIES: SearchQueryConfig[] = [
   // Tier 1 — Structured job boards (HIGH SIGNAL)
   {

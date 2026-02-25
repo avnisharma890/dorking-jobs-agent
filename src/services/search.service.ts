@@ -47,7 +47,7 @@ export async function searchJobs(): Promise<DiscoveredJob[]> {
         timeout: 15000,
       });
 
-      const organic = response.data?.organic_results ?? [];
+      const organic = response.data?.organic_results ?? [];  // organic must always be an iterable 
 
       for (const item of organic) {
         if (!item.link) continue;
