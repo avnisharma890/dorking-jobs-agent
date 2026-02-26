@@ -75,6 +75,11 @@ export async function scrapeJobPage(
 
     const cleanedText = extractReadableText(html);
 
+    logger.debug(
+      { url: input.link, textLength: cleanedText.length },
+      "📏 Extracted text length"
+    );
+
     // guard against garbage pages
     if (!cleanedText || cleanedText.length < 500) {
       logger.warn(

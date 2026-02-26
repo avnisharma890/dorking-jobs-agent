@@ -1,18 +1,53 @@
 import { searchJobs } from "../src/services/search.service";
 import { scrapeJobPage } from "../src/services/scraper.service";
 import { logger } from "../src/config/logger";
+import { evaluateJobWithAI } from "../src/services/aiEvaluator.service";
+
+// 🧠 Cheap lexical pre-filter (saves LLM quota)
+function passesCheapFilter(text: string): boolean {
+  const lower = text.toLowerCase();
+
+  const signals = [
+    "backend intern",
+    "ai intern",
+    "machine learning intern",
+    "software engineer intern",
+    "ml intern",
+  ];
+
+  return signals.some((s) => lower.includes(s));
+}
 
 async function main() {
   logger.info("🚀 Running discovery once...");
 
+  const AI_DELAY_MS = 15000; // safe for ~5 RPM free tier
+  const MAX_CHARS = 4000; // token safety for free tier
+
+  // CONTROLLED TEST FIRST
+  const testJob = {
+    title: "Backend Intern Test",
+    link: "https://jobs.lever.co/convergentresearch/4f276075-e670-4f93-aa47-f89c78272b97",
+  };
+
+  const testScrape = await scrapeJobPage(testJob);
+  console.log("TEST SCRAPE LENGTH:", testScrape?.descriptionText.length);
+
+  // Normal discovery
   const jobs = await searchJobs();
 
   let success = 0;
   let failed = 0;
+  let skippedByFilter = 0;
 
-  console.log(`\nFound ${jobs.length} jobs. Scraping first 3...\n`);
+  const SAMPLE_SIZE = 3;
+  const sample = jobs.slice(0, SAMPLE_SIZE);
 
-  for (const job of jobs.slice(0, 3)) {
+  console.log(
+    `\nFound ${jobs.length} jobs. Scraping first ${SAMPLE_SIZE}...\n`,
+  );
+
+  for (const job of sample) {
     const scraped = await scrapeJobPage(job);
 
     if (!scraped) {
@@ -26,22 +61,38 @@ async function main() {
     console.log(scraped.url);
     console.log("Text length:", scraped.descriptionText.length);
     console.log("----");
+
+    // CHEAP FILTER STAGE
+    if (!passesCheapFilter(scraped.descriptionText)) {
+      skippedByFilter++;
+      logger.info({ url: scraped.url }, "🚫 Skipped by cheap filter");
+      continue;
+    }
+
+    // Token trimming (VERY IMPORTANT)
+    const trimmedText = scraped.descriptionText.slice(0, MAX_CHARS);
+
+    // AI evaluation
+    const aiResult = await evaluateJobWithAI(trimmedText);
+
+    console.log("AI RESULT:", aiResult);
+
+    // Rate limit protection
+    await new Promise((r) => setTimeout(r, AI_DELAY_MS));
   }
 
   logger.info(
     {
       discovered: jobs.length,
-      attempted: Math.min(3, jobs.length),
+      attempted: sample.length,
       success,
       failed,
+      skippedByFilter,
     },
     "📊 Discovery summary",
   );
 
-  logger.info(
-    { attempted: jobs.slice(0, 3).length },
-    "✅ Scraping batch completed",
-  );
+  logger.info({ attempted: sample.length }, "✅ Scraping batch completed");
 }
 
 main().catch((err) => {

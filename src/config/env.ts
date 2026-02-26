@@ -15,7 +15,7 @@ export const env = {
   port: Number(process.env.PORT) || 4000,
   databaseUrl: process.env.DATABASE_URL as string,
   serpApiKey: process.env.SERPAPI_KEY,
-  openaiApiKey: process.env.OPENAI_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY!,
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
   telegramChatId: process.env.TELEGRAM_CHAT_ID,
 };

@@ -1,4 +1,4 @@
-***HIGH-LEVEL ARCHITECTURE***
+**HIGH-LEVEL ARCHITECTURE**
 
 ┌────────────────────────────┐
 │        Scheduler            │  (node-cron)

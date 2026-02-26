@@ -1,26 +1,36 @@
 import pino from "pino";
+import fs from "fs";
 import { env } from "./env.js";
 
 const level =
   process.env.LOG_LEVEL ||
   (env.nodeEnv === "production" ? "info" : "debug");
 
-const transport =
-  env.nodeEnv === "production"
-    ? undefined
-    : pino.transport({
-        targets: [
-          {
-            target: "pino-pretty",
-            level,
-            options: { colorize: true },
-          },
-          {
-            target: "pino/file",
-            level: "debug",
-            options: { destination: "./logs/app.log" },
-          },
-        ],
-      });
+// ensure logs dir exists
+if (!fs.existsSync("logs")) {
+  fs.mkdirSync("logs");
+}
 
-export const logger = pino({ level }, transport);
+const streams = [];
+
+// pretty console in dev
+if (env.nodeEnv !== "production") {
+  streams.push({
+    level,
+    stream: pino.transport({
+      target: "pino-pretty",
+      options: { colorize: true },
+    }),
+  });
+}
+
+// RELIABLE FILE LOGGING
+streams.push({
+  level: "debug",
+  stream: pino.destination("logs/app.log"),
+});
+
+export const logger = pino(
+  { level },
+  pino.multistream(streams)
+);
