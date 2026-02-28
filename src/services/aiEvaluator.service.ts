@@ -3,6 +3,7 @@ import { logger } from "../config/logger.js";
 import { AiMatchSchema } from "../schemas/aiMatch.schema.js";
 import { CANDIDATE_PROFILE } from "../constants/candidateProfile.js";
 import { aiRateLimiter } from "../utils/aiRateLimiter.js";
+import { getCachedAiResult, storeAiCache } from "./aiCache.service.js";
 import fs from "fs/promises";
 import path from "path";
 
@@ -38,18 +39,23 @@ function hydratePrompt(template: string): string {
 
 export async function evaluateJobWithAI(jobText: string) {
   try {
-    const basePrompt = await getPrompt();
-
     // token safety
     const MAX_CHARS = 4000;
     const trimmedJob = jobText.slice(0, MAX_CHARS);
 
-    // load base prompt from file
-    const template = await getPrompt(); // your existing loader
+    // load prompt template once
+    const template = await getPrompt();
 
-    // inject candidate persona into template
+    // inject candidate persona
     const finalPrompt =
-      hydratePrompt(template) + `JOB DESCRIPTION: ${jobText.slice(0, 12000)}`;
+      hydratePrompt(template) + `\n\nJOB DESCRIPTION:\n${trimmedJob}`;
+
+    // check cache first to avoid wasting quota
+    const cached = await getCachedAiResult(trimmedJob);
+    if (cached) {
+      logger.info("⚡ AI cache hit");
+      return cached;
+    }
 
     // route AI call through limiter to avoid quota bursts
     const result = await aiRateLimiter.schedule(async () => {
@@ -67,10 +73,16 @@ export async function evaluateJobWithAI(jobText: string) {
       // parse JSON
       const parsed = JSON.parse(cleaned);
 
-      // Zod validation
-      return AiMatchSchema.parse(parsed);
+      // validate with zod
+      const validated = AiMatchSchema.parse(parsed);
+
+      // store for future reuse
+      await storeAiCache(trimmedJob, validated);
+
+      return validated;
     });
-    return result;
+
+    return result ?? null;
   } catch (err) {
     logger.error({ err }, "❌ AI evaluation failed");
     return null;
