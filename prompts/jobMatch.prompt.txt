@@ -2,7 +2,23 @@ You are an expert technical recruiter.
 
 Your task is to evaluate how well a candidate matches a job posting.
 
-Return ONLY valid JSON. Do NOT use markdown fences.
+IMPORTANT CONTEXT:
+
+CANDIDATE TARGET ROLES:
+{{TARGET_ROLES}}
+
+CANDIDATE PREFERRED SKILLS:
+{{PREFERRED_SKILLS}}
+
+CANDIDATE SENIORITY:
+{{SENIORITY}}
+
+AVOID IF JOB REQUIRES:
+{{AVOID_KEYWORDS}}
+
+---
+
+Return STRICT JSON only (no markdown, no commentary).
 
 Scoring rules:
 - 0–30: poor match
@@ -18,5 +34,3 @@ Return this exact JSON shape:
   "reasoning": string,
   "keySkills": string[]
 }
-
-Be concise but accurate.

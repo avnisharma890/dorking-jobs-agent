@@ -5,12 +5,8 @@ export interface SearchQueryConfig {
 }
 
 // discovery intelligence layer
-export const SEARCH_QUERIES: SearchQueryConfig[] = [
-  // ================================
-  // Tier 1 — HIGH-YIELD STRUCTURED BOARDS
+export const SEARCH_QUERIES: SearchQueryConfig[] = [  // Tier 1 — HIGH-YIELD STRUCTURED BOARDS
   // (bias toward static HTML pages)
-  // ================================
-
   {
     name: "lever_backend_intern",
     query: 'site:jobs.lever.co "backend intern"',
@@ -36,11 +32,7 @@ export const SEARCH_QUERIES: SearchQueryConfig[] = [
     query: 'site:boards.greenhouse.io "AI intern"',
     priority: 1,
   },
-
-  // ================================
   // Tier 2 — ASHBY (keep but de-emphasize)
-  // ================================
-
   {
     name: "ashby_backend_intern",
     query: 'site:jobs.ashbyhq.com "backend intern"',
@@ -51,11 +43,7 @@ export const SEARCH_QUERIES: SearchQueryConfig[] = [
     query: 'site:jobs.ashbyhq.com "AI intern"',
     priority: 2,
   },
-
-  // ================================
   // Tier 3 — Freshness hunting
-  // ================================
-
   {
     name: "fresh_ai_intern",
     query: '"AI intern" "we are hiring"',
@@ -66,11 +54,7 @@ export const SEARCH_QUERIES: SearchQueryConfig[] = [
     query: '"backend intern" "apply"',
     priority: 3,
   },
-
-  // ================================
   // Tier 4 — startup long tail
-  // ================================
-
   {
     name: "startup_ai_intern",
     query: '"early stage startup" "AI intern"',

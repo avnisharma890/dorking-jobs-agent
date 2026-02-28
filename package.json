@@ -8,7 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "discover": "tsx scripts/runOnce.ts",
+    "discover": "tsx src/scripts/runOnce.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
@@ -21,7 +21,7 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "node-cron": "^4.2.1",
-    "pg": "^8.18.0",
+    "pg": "^8.19.0",
     "pino": "^10.3.1",
     "zod": "^4.3.6"
   },

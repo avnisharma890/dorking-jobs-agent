@@ -23,6 +23,24 @@ async function getPrompt(): Promise<string> {
   return fs.readFile(promptPath, "utf-8");
 }
 
+// inject candidate persona into prompt template
+function hydratePrompt(template: string): string {
+  return template
+    .replace(
+      "{{TARGET_ROLES}}",
+      CANDIDATE_PROFILE.targetRoles.join(", "),
+    )
+    .replace(
+      "{{PREFERRED_SKILLS}}",
+      CANDIDATE_PROFILE.preferredSkills.join(", "),
+    )
+    .replace("{{SENIORITY}}", CANDIDATE_PROFILE.seniority)
+    .replace(
+      "{{AVOID_KEYWORDS}}",
+      CANDIDATE_PROFILE.avoidKeywords.join(", "),
+    );
+}
+
 export async function evaluateJobWithAI(jobText: string) {
   try {
     const basePrompt = await getPrompt();
@@ -31,14 +49,11 @@ export async function evaluateJobWithAI(jobText: string) {
     const MAX_CHARS = 4000;
     const trimmedJob = jobText.slice(0, MAX_CHARS);
 
-    const fullPrompt = `
-        ${basePrompt}
+    // load base prompt from file
+    const template = await getPrompt(); // your existing loader
 
-        ${CANDIDATE_PROFILE}
-
-        JOB DESCRIPTION:
-        ${trimmedJob}
-    `;
+    // inject candidate persona into template
+    const fullPrompt = hydratePrompt(template) + `JOB DESCRIPTION: ${jobText.slice(0, 12000)}`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",

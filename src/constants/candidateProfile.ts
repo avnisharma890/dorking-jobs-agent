@@ -1,9 +1,38 @@
-export const CANDIDATE_PROFILE = `
-Candidate Profile:
-- Backend-focused engineer
-- Strong in Node.js, Express, TypeScript
-- Familiar with React and Next.js
-- Interested in AI/ML and GenAI systems
-- Looking specifically for internships
-- Comfortable with distributed systems concepts
-`;
+export interface CandidateProfile {
+  targetRoles: string[];
+  preferredSkills: string[];
+  seniority: "intern" | "junior" | "mid";
+  avoidKeywords: string[];
+}
+
+export const CANDIDATE_PROFILE: CandidateProfile = {
+  targetRoles: [
+    "backend intern",
+    "ai intern",
+    "machine learning intern",
+    "genai intern",
+  ],
+
+  preferredSkills: [
+    "node.js",
+    "typescript",
+    "express",
+    "postgres",
+    "redis",
+    "python",
+    "machine learning",
+    "llm",
+    "rag",
+    "vector database",
+  ],
+
+  seniority: "intern",
+
+  avoidKeywords: [
+    "senior",
+    "staff",
+    "principal",
+    "5+ years",
+    "7+ years",
+  ],
+};
