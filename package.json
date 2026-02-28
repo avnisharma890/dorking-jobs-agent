@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "discover": "tsx src/scripts/runOnce.ts",
+    "digest": "tsx src/scripts/testDigest.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],

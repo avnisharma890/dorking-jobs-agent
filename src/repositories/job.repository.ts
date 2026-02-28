@@ -10,6 +10,29 @@ export async function jobExists(url: string): Promise<boolean> {
   return (res.rowCount ?? 0) > 0;
 }
 
+// Fetch top ranked jobs for digest generation
+export async function getTopJobs(limit: number = 10) {
+  const res = await pool.query(
+    `
+    SELECT
+      url,
+      title,
+      ai_score,
+      ai_verdict,
+      ai_reasoning,
+      ai_key_skills,
+      priority_score,
+      evaluated_at
+    FROM jobs
+    ORDER BY priority_score DESC, evaluated_at DESC
+    LIMIT $1
+    `,
+    [limit],
+  );
+
+  return res.rows;
+}
+
 // Persist evaluated job
 export async function insertEvaluatedJob(data: {
   url: string;
