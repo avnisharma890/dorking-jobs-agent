@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const requiredEnv = ["NODE_ENV", "PORT", "DATABASE_URL"] as const;
+const requiredEnv = ["NODE_ENV", "PORT", "DATABASE_URL", "TELEGRAM_BOT_TOKEN", "GEMINI_API_KEY"] as const;
 
 for (const key of requiredEnv) {
   if (!process.env[key]) {
@@ -15,7 +15,7 @@ export const env = {
   port: Number(process.env.PORT) || 4000,
   databaseUrl: process.env.DATABASE_URL as string,
   serpApiKey: process.env.SERPAPI_KEY,
-  geminiApiKey: process.env.GEMINI_API_KEY!,
-  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN as string,
   telegramChatId: process.env.TELEGRAM_CHAT_ID,
 };

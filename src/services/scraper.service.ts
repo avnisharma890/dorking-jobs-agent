@@ -66,7 +66,7 @@ function extractReadableText(html: string): string {
 
 // --- main scraper ---
 export async function scrapeJobPage(
-  input: { title: string; link: string }
+  input: { title?: string; link: string }
 ): Promise<ScrapedJob | null> {
   try {
     logger.trace?.({ url: input.link }, "🕷️ Scraping job page");
@@ -91,7 +91,7 @@ export async function scrapeJobPage(
 
     return {
       url: input.link,
-      title: input.title,
+      title: input.title ?? "Untitled Job",
       descriptionText: cleanedText.slice(0, 15000), // protect LLM context
       rawHtmlLength: html.length,
     };

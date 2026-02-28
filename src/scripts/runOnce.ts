@@ -1,13 +1,7 @@
 import { searchJobs } from "../services/search.service.js";
 import { scrapeJobPage } from "../services/scraper.service.js";
 import { logger } from "../config/logger.js";
-import { evaluateJobWithAI } from "../services/aiEvaluator.service.js";
-import {
-  jobExists,
-  insertEvaluatedJob,
-} from "../repositories/job.repository.js";
-import { AI_THRESHOLDS } from "../config/aiThresholds.js";
-import { passesSemanticFilter } from "../utils/semanticFilter.js";
+import { processSingleJob } from "../pipelines/jobPipeline.js";
 
 // 🧠 Cheap lexical pre-filter (saves LLM quota)
 function passesCheapFilter(text: string): boolean {
@@ -55,75 +49,15 @@ export async function runDiscoveryOnce() {
     );
 
     for (const job of sample) {
-      // skip if already processed in previous runs
-      if (await jobExists(job.link)) {
-        logger.info({ url: job.link }, "🧠 Skipped (already in DB)");
-        continue;
-      }
-      const scraped = await scrapeJobPage(job);
-
-      if (!scraped) {
-        failed++;
-        continue;
-      }
-
-      success++;
-
-      console.log("\n✅ SCRAPED:");
-      console.log(scraped.url);
-      console.log("Text length:", scraped.descriptionText.length);
-      console.log("----");
-
-      // CHEAP FILTER
-      if (!passesCheapFilter(scraped.descriptionText)) {
-        skippedByFilter++;
-        logger.info({ url: scraped.url }, "🚫 Skipped by cheap filter");
-        continue;
-      }
-
-      // semantic filter to further protect AI quota
-      if (!passesSemanticFilter(scraped.descriptionText)) {
-        logger.info({ url: scraped.url }, "🧠 Skipped by semantic filter");
-        continue;
-      }
-
-      // Token trimming (VERY IMPORTANT)
-      const trimmedText = scraped.descriptionText.slice(0, MAX_CHARS);
-
-      // AI evaluation
-      const aiResult = await evaluateJobWithAI(trimmedText);
-
-      // skip if AI failed or returned invalid
-      if (!aiResult) {
-        logger.warn({ url: scraped.url }, "🤖 AI returned null");
-        continue;
-      }
-
-      console.log("AI RESULT:", aiResult);
-
-      // threshold filter
-      if (aiResult.score < AI_THRESHOLDS.MIN_SCORE) {
-        logger.info(
-          { url: scraped.url, score: aiResult.score },
-          "📉 Below threshold",
-        );
-        continue;
-      }
-
-      // persist high-quality job to DB
-      await insertEvaluatedJob({
-        url: scraped.url,
-        title: job.title,
-        description: scraped.descriptionText,
-        aiScore: aiResult.score,
-        aiVerdict: aiResult.verdict,
-        aiReasoning: aiResult.reasoning,
-        aiKeySkills: aiResult.keySkills,
+      const result = await processSingleJob(job, {
+        maxChars: MAX_CHARS,
+        aiDelayMs: AI_DELAY_MS,
       });
 
-      // Rate limit protection
-      await new Promise((r) => setTimeout(r, AI_DELAY_MS));
-    }
+      if (result === "inserted") success++;
+      else if (result === "failed") failed++;
+      else skippedByFilter++;
+    } 
 
     logger.info(
       {

@@ -42,6 +42,7 @@ export async function insertEvaluatedJob(data: {
   aiVerdict: string;
   aiReasoning: string;
   aiKeySkills: string[];
+  priorityScore?: number;
 }) {
   // compute final priority score for ranking
   const priorityScore = computeJobRank(data.aiScore);

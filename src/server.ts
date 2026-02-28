@@ -3,6 +3,7 @@ import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { checkDbHealth } from "./config/db.js";
 import { startDiscoveryCron } from "./cron/discovery.cron.js";
+import { startDigestCron } from "./cron/digest.cron.js";
 
 async function startServer() {
   // ensure DB is healthy before starting server
@@ -16,6 +17,7 @@ async function startServer() {
 
   // start background job hunter after server is ready
   startDiscoveryCron();
+  startDigestCron();
 }
 
 startServer().catch((err: Error) => {
