@@ -1,4 +1,5 @@
 import { pool } from "../config/db.js";
+import { computeJobRank } from "../utils/jobRanker.js";
 
 // Check if job already exists (dedup guard)
 export async function jobExists(url: string): Promise<boolean> {
@@ -19,6 +20,9 @@ export async function insertEvaluatedJob(data: {
   aiReasoning: string;
   aiKeySkills: string[];
 }) {
+  // compute final priority score for ranking
+  const priorityScore = computeJobRank(data.aiScore);
+
   await pool.query(
     `
     INSERT INTO jobs (
@@ -29,9 +33,10 @@ export async function insertEvaluatedJob(data: {
       ai_verdict,
       ai_reasoning,
       ai_key_skills,
+      priority_score,
       evaluated_at
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
     ON CONFLICT (url) DO NOTHING
     `,
     [
@@ -42,6 +47,7 @@ export async function insertEvaluatedJob(data: {
       data.aiVerdict,
       data.aiReasoning,
       data.aiKeySkills,
+      priorityScore,
     ]
   );
 }
