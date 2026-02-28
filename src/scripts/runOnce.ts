@@ -7,6 +7,7 @@ import {
   insertEvaluatedJob,
 } from "../repositories/job.repository.js";
 import { AI_THRESHOLDS } from "../config/aiThresholds.js";
+import { passesSemanticFilter } from "../utils/semanticFilter.js";
 
 // 🧠 Cheap lexical pre-filter (saves LLM quota)
 function passesCheapFilter(text: string): boolean {
@@ -73,10 +74,16 @@ export async function runDiscoveryOnce() {
       console.log("Text length:", scraped.descriptionText.length);
       console.log("----");
 
-      // CHEAP FILTER STAGE
+      // CHEAP FILTER
       if (!passesCheapFilter(scraped.descriptionText)) {
         skippedByFilter++;
         logger.info({ url: scraped.url }, "🚫 Skipped by cheap filter");
+        continue;
+      }
+
+      // semantic filter to further protect AI quota
+      if (!passesSemanticFilter(scraped.descriptionText)) {
+        logger.info({ url: scraped.url }, "🧠 Skipped by semantic filter");
         continue;
       }
 

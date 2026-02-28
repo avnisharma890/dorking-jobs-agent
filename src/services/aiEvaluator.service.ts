@@ -1,9 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { logger } from "../config/logger.js";
 import { AiMatchSchema } from "../schemas/aiMatch.schema.js";
+import { CANDIDATE_PROFILE } from "../constants/candidateProfile.js";
+import { aiRateLimiter } from "../utils/aiRateLimiter.js";
 import fs from "fs/promises";
 import path from "path";
-import { CANDIDATE_PROFILE } from "../constants/candidateProfile.js";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
@@ -26,19 +27,13 @@ async function getPrompt(): Promise<string> {
 // inject candidate persona into prompt template
 function hydratePrompt(template: string): string {
   return template
-    .replace(
-      "{{TARGET_ROLES}}",
-      CANDIDATE_PROFILE.targetRoles.join(", "),
-    )
+    .replace("{{TARGET_ROLES}}", CANDIDATE_PROFILE.targetRoles.join(", "))
     .replace(
       "{{PREFERRED_SKILLS}}",
       CANDIDATE_PROFILE.preferredSkills.join(", "),
     )
     .replace("{{SENIORITY}}", CANDIDATE_PROFILE.seniority)
-    .replace(
-      "{{AVOID_KEYWORDS}}",
-      CANDIDATE_PROFILE.avoidKeywords.join(", "),
-    );
+    .replace("{{AVOID_KEYWORDS}}", CANDIDATE_PROFILE.avoidKeywords.join(", "));
 }
 
 export async function evaluateJobWithAI(jobText: string) {
@@ -53,26 +48,29 @@ export async function evaluateJobWithAI(jobText: string) {
     const template = await getPrompt(); // your existing loader
 
     // inject candidate persona into template
-    const fullPrompt = hydratePrompt(template) + `JOB DESCRIPTION: ${jobText.slice(0, 12000)}`;
+    const finalPrompt =
+      hydratePrompt(template) + `JOB DESCRIPTION: ${jobText.slice(0, 12000)}`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: fullPrompt,
+    // route AI call through limiter to avoid quota bursts
+    const result = await aiRateLimiter.schedule(async () => {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: finalPrompt,
+      });
+
+      const text = response.text;
+      if (!text) return null;
+
+      // strip fences
+      const cleaned = extractJson(text);
+
+      // parse JSON
+      const parsed = JSON.parse(cleaned);
+
+      // Zod validation
+      return AiMatchSchema.parse(parsed);
     });
-
-    const text = response.text;
-    if (!text) return null;
-
-    // strip fences
-    const cleaned = extractJson(text);
-
-    // parse JSON
-    const parsed = JSON.parse(cleaned);
-
-    // Zod validation
-    const validated = AiMatchSchema.parse(parsed);
-
-    return validated;
+    return result;
   } catch (err) {
     logger.error({ err }, "❌ AI evaluation failed");
     return null;
