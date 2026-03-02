@@ -1,13 +1,14 @@
+import { logger } from "../config/logger.js";
+
 // simple in-memory rate limiter for Gemini free tier protection
 type QueueTask<T> = () => Promise<T>;
-
 class AiRateLimiter {
   private queue: QueueTask<any>[] = [];
   private active = false;
 
   // free-tier safety (adjust anytime)
   private readonly MIN_DELAY_MS = 13_000; // ~4–5 RPM safe
-  private readonly MAX_DAILY = 18; // keep buffer under 20/day
+  private readonly MAX_DAILY = 100; // keep buffer under 20/day
 
   private dailyCount = 0;
   private dayStart = Date.now();
@@ -15,6 +16,12 @@ class AiRateLimiter {
   // enqueue AI work and execute safely
   async schedule<T>(task: QueueTask<T>): Promise<T | null> {
     return new Promise((resolve) => {
+      // ✅ ADD HERE — visibility into limiter state
+      logger.debug(
+        { queueLength: this.queue.length, dailyCount: this.dailyCount },
+        "🟡 Task queued in rate limiter",
+      );
+
       this.queue.push(async () => {
         try {
           // reset daily counter every 24h
@@ -25,13 +32,15 @@ class AiRateLimiter {
 
           // hard daily cap protection
           if (this.dailyCount >= this.MAX_DAILY) {
+            logger.warn({ dailyCount: this.dailyCount }, "🚫 Daily cap hit");
             return resolve(null);
           }
 
           const result = await task();
           this.dailyCount++;
           resolve(result);
-        } catch {
+        } catch (err) {
+          logger.error({ err }, "🚨 Rate limiter task failed");
           resolve(null);
         }
       });

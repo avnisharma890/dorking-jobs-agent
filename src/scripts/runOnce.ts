@@ -9,10 +9,14 @@ function passesCheapFilter(text: string): boolean {
 
   const signals = [
     "backend intern",
+    "backend ai intern",
+    "backend engineering intern",
     "ai intern",
+    "ai engineering intern",
     "machine learning intern",
-    "software engineer intern",
     "ml intern",
+    "software engineer intern",
+    "Applied AI Engineer",
   ];
 
   return signals.some((s) => lower.includes(s));
@@ -27,12 +31,22 @@ export async function runDiscoveryOnce() {
 
     // CONTROLLED TEST FIRST
     const testJob = {
-      title: "Backend Intern Test",
-      link: "https://jobs.lever.co/convergentresearch/4f276075-e670-4f93-aa47-f89c78272b97",
+      title: "Backend AI Intern",
+      link: "https://example.com/gold-test",
     };
 
     const testScrape = await scrapeJobPage(testJob);
     console.log("TEST SCRAPE LENGTH:", testScrape?.descriptionText.length);
+
+    // ⭐ ADD THIS BLOCK
+    logger.info("🧪 Running controlled strong-match test...");
+
+    const testResult = await processSingleJob(testJob, {
+      maxChars: MAX_CHARS,
+      aiDelayMs: AI_DELAY_MS,
+    });
+
+    logger.info({ testResult }, "🧪 Test job result");
 
     // Normal discovery
     const jobs = await searchJobs();
@@ -57,7 +71,7 @@ export async function runDiscoveryOnce() {
       if (result === "inserted") success++;
       else if (result === "failed") failed++;
       else skippedByFilter++;
-    } 
+    }
 
     logger.info(
       {

@@ -15,9 +15,8 @@ async function startServer() {
     logger.info(`Server running on port ${env.port}`);
   });
 
-  // start background job hunter after server is ready
-  startDiscoveryCron();
-  startDigestCron();
+  startDiscoveryCron(); // background job hunter
+  startDigestCron(); // daily telegram digest
 }
 
 startServer().catch((err: Error) => {

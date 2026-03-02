@@ -1,6 +1,9 @@
 import { scrapeJobPage } from "../services/scraper.service.js";
 import { evaluateJobWithAI } from "../services/aiEvaluator.service.js";
-import { insertEvaluatedJob, jobExists } from "../repositories/job.repository.js";
+import {
+  insertEvaluatedJob,
+  jobExists,
+} from "../repositories/job.repository.js";
 import { passesSemanticFilter } from "../utils/semanticFilter.js";
 import { computeJobRank } from "../utils/jobRanker.js";
 import { AI_THRESHOLDS } from "../config/aiThresholds.js";
@@ -13,7 +16,7 @@ export async function processSingleJob(
   options: {
     maxChars: number;
     aiDelayMs: number;
-  }
+  },
 ): Promise<"inserted" | "skipped" | "failed"> {
   // dedup guard
   if (await jobExists(job.link)) {
@@ -21,7 +24,32 @@ export async function processSingleJob(
     return "skipped";
   }
 
-  const scraped = await scrapeJobPage(job);
+  let scraped = await scrapeJobPage(job);
+
+  // 🔬 TEMPORARY GOLD TEST (remove after debugging)
+  if (job.link.includes("gold-test")) {
+    logger.warn("🧪 Using synthetic scraped payload");
+
+    scraped = {
+      url: job.link,
+      title: job.title ?? "Backend AI Intern",
+      descriptionText: `
+We are hiring a Backend AI Intern.
+
+Requirements:
+- Node.js
+- TypeScript
+- Python
+- LLM experience
+- RAG pipelines
+- Vector databases
+
+This is a summer internship for students.
+    `,
+      rawHtmlLength: 9999,
+    };
+  }
+
   if (!scraped) return "failed";
 
   // semantic filter
@@ -31,6 +59,15 @@ export async function processSingleJob(
   }
 
   const trimmed = scraped.descriptionText.slice(0, options.maxChars);
+
+  logger.info(
+    {
+      url: scraped.url,
+      textLength: trimmed.length,
+      passesSemantic: true,
+    },
+    "🧠 Sending job to AI",
+  );
 
   const aiResult = await evaluateJobWithAI(trimmed);
   if (!aiResult) {
@@ -42,7 +79,7 @@ export async function processSingleJob(
   if (aiResult.score < AI_THRESHOLDS.MIN_SCORE) {
     logger.info(
       { url: scraped.url, score: aiResult.score },
-      "📉 Below threshold"
+      "📉 Below threshold",
     );
     return "skipped";
   }

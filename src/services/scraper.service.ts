@@ -1,4 +1,5 @@
 import axios from "axios";
+import https from "https";
 import * as cheerio from "cheerio";
 import { logger } from "../config/logger.js";
 
@@ -12,12 +13,17 @@ export interface ScrapedJob {
 const REQUEST_TIMEOUT_MS = 15000;
 const MAX_RETRIES = 2;
 
-// --- helper: sleep ---
+// helper: sleep
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// --- helper: fetch with retry ---
+// DEV ONLY
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
+
+// helper: fetch with retry
 async function fetchWithRetry(url: string): Promise<string> {
   let lastError: unknown;
 
@@ -25,6 +31,7 @@ async function fetchWithRetry(url: string): Promise<string> {
     try {
       const response = await axios.get(url, {
         timeout: REQUEST_TIMEOUT_MS,
+        httpsAgent, // DEV ONLY
         headers: {
           "User-Agent":
             "Mozilla/5.0 (compatible; AI-Internship-Agent/1.0)",
@@ -50,7 +57,7 @@ async function fetchWithRetry(url: string): Promise<string> {
   throw lastError;
 }
 
-// --- helper: extract readable text ---
+// helper: extract readable text
 function extractReadableText(html: string): string {
   const $ = cheerio.load(html);
 
@@ -64,7 +71,7 @@ function extractReadableText(html: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-// --- main scraper ---
+// main scraper
 export async function scrapeJobPage(
   input: { title?: string; link: string }
 ): Promise<ScrapedJob | null> {
@@ -88,6 +95,7 @@ export async function scrapeJobPage(
       );
       return null;
     }
+    
 
     return {
       url: input.link,
@@ -95,6 +103,7 @@ export async function scrapeJobPage(
       descriptionText: cleanedText.slice(0, 15000), // protect LLM context
       rawHtmlLength: html.length,
     };
+    
   } catch (err) {
 
     logger.error(

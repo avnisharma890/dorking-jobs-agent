@@ -11,7 +11,7 @@ export async function getCachedAiResult(text: string) {
     `SELECT score, verdict, reasoning, key_skills
      FROM ai_cache
      WHERE content_hash = $1`,
-    [hash]
+    [hash],
   );
 
   if (res.rowCount === 0) return null;
@@ -22,17 +22,23 @@ export async function getCachedAiResult(text: string) {
     score: row.score,
     verdict: row.verdict,
     reasoning: row.reasoning,
-    keySkills: row.key_skills,
+    keySkills:
+      typeof row.key_skills === "string"
+        ? JSON.parse(row.key_skills)
+        : row.key_skills,
   };
 }
 
 // store fresh AI result
-export async function storeAiCache(text: string, result: {
-  score: number;
-  verdict: string;
-  reasoning: string;
-  keySkills: string[];
-}) {
+export async function storeAiCache(
+  text: string,
+  result: {
+    score: number;
+    verdict: string;
+    reasoning: string;
+    keySkills: string[];
+  },
+) {
   const hash = hashContent(text);
 
   await pool.query(
@@ -40,6 +46,12 @@ export async function storeAiCache(text: string, result: {
      (content_hash, score, verdict, reasoning, key_skills)
      VALUES ($1, $2, $3, $4, $5)
      ON CONFLICT (content_hash) DO NOTHING`,
-    [hash, result.score, result.verdict, result.reasoning, result.keySkills]
+    [
+      hash,
+      result.score,
+      result.verdict,
+      result.reasoning,
+      JSON.stringify(result.keySkills),
+    ],
   );
 }

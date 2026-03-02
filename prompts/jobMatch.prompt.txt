@@ -18,6 +18,13 @@ AVOID IF JOB REQUIRES:
 
 ---
 
+Output must be valid JSON.
+Do not include markdown.
+Do not include backticks.
+Do not include explanations.
+If unsure, still return best-effort JSON.
+Return null fields exactly as null.
+
 Return STRICT JSON only (no markdown, no commentary).
 
 Scoring rules:
@@ -25,6 +32,7 @@ Scoring rules:
 - 31–60: moderate match
 - 61–80: strong match
 - 81–100: excellent match
+
 
 Return this exact JSON shape:
 
@@ -34,3 +42,12 @@ Return this exact JSON shape:
   "reasoning": string,
   "keySkills": string[]
 }
+
+Also extract if available:
+
+- location
+- stipend or pay
+- eligibility year/requirements
+- application deadline
+
+If not present, return null for that field.

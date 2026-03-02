@@ -10,11 +10,42 @@ export async function jobExists(url: string): Promise<boolean> {
   return (res.rowCount ?? 0) > 0;
 }
 
+// fetch top jobs that were not yet included in a digest
+export async function getTopUnsentJobs(limit: number) {
+  const res = await pool.query(
+    `
+    SELECT *
+    FROM jobs
+    WHERE digest_sent = FALSE
+    ORDER BY ai_score DESC, evaluated_at DESC
+    LIMIT $1
+    `,
+    [limit]
+  );
+
+  return res.rows;
+}
+
+// mark jobs as already pushed to digest
+export async function markJobsAsDigested(urls: string[]) {
+  if (!urls.length) return;
+
+  await pool.query(
+    `
+    UPDATE jobs
+    SET digest_sent = TRUE
+    WHERE url = ANY($1::text[])
+    `,
+    [urls]
+  );
+}
+
 // Fetch top ranked jobs for digest generation
 export async function getTopJobs(limit: number = 10) {
   const res = await pool.query(
     `
     SELECT
+      id,
       url,
       title,
       ai_score,
@@ -24,6 +55,8 @@ export async function getTopJobs(limit: number = 10) {
       priority_score,
       evaluated_at
     FROM jobs
+    WHERE digest_sent = false
+      AND ai_verdict = 'strong_yes'
     ORDER BY priority_score DESC, evaluated_at DESC
     LIMIT $1
     `,
